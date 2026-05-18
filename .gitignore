@@ -1,0 +1,14 @@
+target/
+.mvnrepo*/
+*.log
+*.tmp
+*.bak
+*.swp
+.idea/
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+Thumbs.db
+.DS_Store

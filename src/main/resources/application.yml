@@ -1,0 +1,95 @@
+﻿# ============================================================
+# AppCasa Â· ConfiguraciÃ³n principal
+# ============================================================
+spring:
+  application:
+    name: appcasa-backend
+  profiles:
+    active: local
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  jackson:
+    default-property-inclusion: non_null
+    date-format: yyyy-MM-dd'T'HH:mm:ss'Z'
+    time-zone: UTC
+
+# ============================================================
+# JWT
+# ============================================================
+appcasa:
+  jwt:
+    secret: ${JWT_SECRET:cambia-esto-en-produccion-minimo-256-bits}
+    expiration-ms: 86400000       # 24 horas
+    refresh-expiration-ms: 604800000  # 7 dÃ­as
+
+---
+# ============================================================
+# Perfil: dev
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/appcasa_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: appcasa_u
+    password: app_casa_u1!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+logging:
+  level:
+    com.appcasa: DEBUG
+    org.springframework.security: DEBUG
+
+server:
+  port: 8080
+
+---
+# ============================================================
+# Perfil: prod
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/appcasa_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USER:appcasa_u}
+    password: ${DB_PASS:app_casa_u1!}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+logging:
+  level:
+    com.appcasa: INFO
+
+server:
+  port: ${PORT:8080}
+
