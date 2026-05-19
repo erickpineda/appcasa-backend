@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,7 +26,7 @@ public class TareaRequest {
 
   private String categoria;
 
-  private LocalDate fechaLimite;
+  private Instant fechaLimite;
 
   private Boolean esPeriodica;
 

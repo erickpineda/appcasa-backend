@@ -18,7 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
@@ -95,7 +95,7 @@ class TareaControllerContractTest {
       .descripcion("Para la semana")
       .idPrioridad(3)
       .categoria("Compras")
-      .fechaLimite(LocalDate.now())
+      .fechaLimite(Instant.parse("2026-05-19T09:00:00Z"))
       .esPeriodica(false)
       .esPersonal(false)
       .idEstado(1)
@@ -122,6 +122,7 @@ class TareaControllerContractTest {
         .header("Authorization", "Bearer " + token))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.id").value(tarea.getId().toString()))
+      .andExpect(jsonPath("$.fechaLimite").value("2026-05-19T09:00:00Z"))
       .andExpect(jsonPath("$.prioridad.codigo").value("ALTA"))
       .andExpect(jsonPath("$.idPrioridad").doesNotExist())
       .andExpect(jsonPath("$.idEstado").doesNotExist());
@@ -137,14 +138,50 @@ class TareaControllerContractTest {
             "hogarCodigo":"%s",
             "titulo":"Sacar la basura",
             "prioridadCodigo":"MEDIA",
+            "fechaLimite":"2026-05-20T18:30:00Z",
             "esPersonal":false
           }
           """.formatted(hogar.getCodigo())))
       .andExpect(status().isCreated())
       .andExpect(jsonPath("$.hogarCodigo").value(hogar.getCodigo()))
+      .andExpect(jsonPath("$.fechaLimite").value("2026-05-20T18:30:00Z"))
       .andExpect(jsonPath("$.prioridad.codigo").value("MEDIA"))
       .andExpect(jsonPath("$.idPrioridad").doesNotExist())
       .andExpect(jsonPath("$.idHogar").doesNotExist());
+  }
+
+  @Test
+  void actualizar_preservesRealDueDateTime() throws Exception {
+    mockMvc.perform(put("/api/v1/tareas/{id}", tarea.getId())
+        .header("Authorization", "Bearer " + token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {
+            "hogarCodigo":"%s",
+            "titulo":"Comprar pienso actualizado",
+            "fechaLimite":"2026-05-25T21:45:00Z",
+            "esPersonal":false
+          }
+          """.formatted(hogar.getCodigo())))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.titulo").value("Comprar pienso actualizado"))
+      .andExpect(jsonPath("$.fechaLimite").value("2026-05-25T21:45:00Z"));
+  }
+
+  @Test
+  void crear_rejectsInvalidDueDateTimeFormat() throws Exception {
+    mockMvc.perform(post("/api/v1/tareas")
+        .header("Authorization", "Bearer " + token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {
+            "hogarCodigo":"%s",
+            "titulo":"Formato invalido",
+            "fechaLimite":"2026-05-20 18:30",
+            "esPersonal":false
+          }
+          """.formatted(hogar.getCodigo())))
+      .andExpect(status().isBadRequest());
   }
 
   @Test

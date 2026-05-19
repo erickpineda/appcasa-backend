@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Null;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +16,7 @@ public record TareaPublicRequest(
   String descripcion,
   String prioridadCodigo,
   String categoria,
-  LocalDate fechaLimite,
+  Instant fechaLimite,
   Boolean esPeriodica,
   String periodicidadCodigo,
   Boolean esPersonal,

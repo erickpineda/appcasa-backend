@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -38,7 +37,7 @@ public class Tarea extends BaseEntity {
   private String categoria;
 
   @Column(name = "fecha_limite")
-  private LocalDate fechaLimite;
+  private Instant fechaLimite;
 
   @Column(name = "fecha_completada")
   private Instant fechaCompletada;

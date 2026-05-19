@@ -3,7 +3,6 @@ package com.appcasa.infrastructure.api.dto.tarea;
 import com.appcasa.infrastructure.api.dto.catalogo.CodigoLabelDto;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,7 +13,7 @@ public record TareaPublicResponse(
   String descripcion,
   CodigoLabelDto prioridad,
   String categoria,
-  LocalDate fechaLimite,
+  Instant fechaLimite,
   Instant fechaCompletada,
   CodigoLabelDto periodicidad,
   boolean esPersonal,

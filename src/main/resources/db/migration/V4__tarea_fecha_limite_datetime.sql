@@ -1,0 +1,6 @@
+ALTER TABLE TB_TAREA
+  ALTER COLUMN fecha_limite TYPE TIMESTAMPTZ
+  USING CASE
+    WHEN fecha_limite IS NULL THEN NULL
+    ELSE fecha_limite::timestamp AT TIME ZONE 'UTC'
+  END;
