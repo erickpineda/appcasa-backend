@@ -28,6 +28,17 @@ appcasa:
     secret: ${JWT_SECRET:cambia-esto-en-produccion-minimo-256-bits}
     expiration-ms: 86400000       # 24 horas
     refresh-expiration-ms: 604800000  # 7 dÃ­as
+  auth:
+    refresh-cookie:
+      name: appcasa_refresh
+      path: /api/v1/auth
+      same-site: Lax
+      secure: false
+  security:
+    cors:
+      allowed-origins:
+        - http://localhost:8100
+        - http://localhost:4200
 
 ---
 # ============================================================
@@ -90,6 +101,14 @@ logging:
   level:
     com.appcasa: INFO
 
+appcasa:
+  auth:
+    refresh-cookie:
+      secure: true
+  security:
+    cors:
+      allowed-origins:
+        - ${APP_FRONTEND_URL:https://app.appcasa.com}
+
 server:
   port: ${PORT:8080}
-

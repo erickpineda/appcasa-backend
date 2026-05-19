@@ -26,6 +26,7 @@ import java.util.List;
 public class SecurityConfig {
 
   private final JwtAuthFilter jwtAuthFilter;
+  private final SecurityCorsProperties securityCorsProperties;
   private final Environment environment;
 
   @Bean
@@ -77,7 +78,7 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration cfg = new CorsConfiguration();
-    cfg.setAllowedOriginPatterns(List.of("*"));
+    cfg.setAllowedOrigins(securityCorsProperties.getAllowedOrigins());
     cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     cfg.setAllowedHeaders(List.of("*"));
     cfg.setAllowCredentials(true);

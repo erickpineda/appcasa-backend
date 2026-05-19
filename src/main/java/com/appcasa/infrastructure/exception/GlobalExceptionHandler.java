@@ -29,6 +29,13 @@ public class GlobalExceptionHandler {
     return pd;
   }
 
+  @ExceptionHandler(UnauthorizedException.class)
+  public ProblemDetail handleUnauthorized(UnauthorizedException ex) {
+    ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    pd.setType(URI.create("/errors/unauthorized"));
+    return pd;
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ProblemDetail handleValidacion(MethodArgumentNotValidException ex) {
     String errores = ex.getBindingResult().getFieldErrors().stream()

@@ -30,6 +30,10 @@ public class JwtService {
     return buildToken(idUsuario, email, props.getRefreshExpirationMs());
   }
 
+  public long getRefreshExpirationMs() {
+    return props.getRefreshExpirationMs();
+  }
+
   private String buildToken(UUID idUsuario, String email, long expirationMs) {
     Date ahora = new Date();
     Date expira = new Date(ahora.getTime() + expirationMs);
