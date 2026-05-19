@@ -2,6 +2,8 @@ package com.appcasa.infrastructure.api;
 
 import com.appcasa.domain.hogar.Hogar;
 import com.appcasa.domain.hogar.HogarRepository;
+import com.appcasa.domain.miembro.MiembroHogar;
+import com.appcasa.domain.miembro.MiembroHogarRepository;
 import com.appcasa.domain.tarea.Tarea;
 import com.appcasa.domain.tarea.TareaRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +24,7 @@ import java.util.UUID;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,9 +45,16 @@ class TareaControllerContractTest {
   @Autowired
   private TareaRepository tareaRepository;
 
+  @Autowired
+  private MiembroHogarRepository miembroHogarRepository;
+
   private String token;
   private Hogar hogar;
+  private Hogar otroHogar;
   private Tarea tarea;
+  private MiembroHogar miembroUno;
+  private MiembroHogar miembroDos;
+  private MiembroHogar miembroOtroHogar;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -53,6 +63,30 @@ class TareaControllerContractTest {
       .nombre("Casa Contrato")
       .descripcion("Hogar de prueba")
       .codigo("CASA" + UUID.randomUUID().toString().substring(0, 4).toUpperCase())
+      .idEstado(1)
+      .build());
+    otroHogar = hogarRepository.save(Hogar.builder()
+      .nombre("Casa Externa")
+      .descripcion("Otro hogar de prueba")
+      .codigo("OTRA" + UUID.randomUUID().toString().substring(0, 4).toUpperCase())
+      .idEstado(1)
+      .build());
+    miembroUno = miembroHogarRepository.save(MiembroHogar.builder()
+      .idHogar(hogar.getId())
+      .idTipoMiembro(1)
+      .nombre("Ana")
+      .idEstado(1)
+      .build());
+    miembroDos = miembroHogarRepository.save(MiembroHogar.builder()
+      .idHogar(hogar.getId())
+      .idTipoMiembro(1)
+      .nombre("Luis")
+      .idEstado(1)
+      .build());
+    miembroOtroHogar = miembroHogarRepository.save(MiembroHogar.builder()
+      .idHogar(otroHogar.getId())
+      .idTipoMiembro(1)
+      .nombre("Intruso")
       .idEstado(1)
       .build());
     tarea = tareaRepository.save(Tarea.builder()
@@ -111,6 +145,79 @@ class TareaControllerContractTest {
       .andExpect(jsonPath("$.prioridad.codigo").value("MEDIA"))
       .andExpect(jsonPath("$.idPrioridad").doesNotExist())
       .andExpect(jsonPath("$.idHogar").doesNotExist());
+  }
+
+  @Test
+  void crear_includesRealAssignmentsAndForcesEsPersonalFalse() throws Exception {
+    mockMvc.perform(post("/api/v1/tareas")
+        .header("Authorization", "Bearer " + token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {
+            "hogarCodigo":"%s",
+            "titulo":"Pasear al perro",
+            "esPersonal":true,
+            "miembroIds":["%s","%s"]
+          }
+          """.formatted(hogar.getCodigo(), miembroUno.getId(), miembroDos.getId())))
+      .andExpect(status().isCreated())
+      .andExpect(jsonPath("$.esPersonal").value(false))
+      .andExpect(jsonPath("$.asignaciones.length()").value(2))
+      .andExpect(jsonPath("$.asignaciones[0].miembroId").value(miembroUno.getId().toString()))
+      .andExpect(jsonPath("$.asignaciones[0].nombreMiembro").value("Ana"))
+      .andExpect(jsonPath("$.asignaciones[1].miembroId").value(miembroDos.getId().toString()))
+      .andExpect(jsonPath("$.asignaciones[1].nombreMiembro").value("Luis"));
+  }
+
+  @Test
+  void actualizar_replacesAssignmentsWithNewSelection() throws Exception {
+    mockMvc.perform(put("/api/v1/tareas/{id}", tarea.getId())
+        .header("Authorization", "Bearer " + token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {
+            "hogarCodigo":"%s",
+            "titulo":"Comprar pienso inicial",
+            "esPersonal":false,
+            "miembroIds":["%s","%s"]
+          }
+          """.formatted(hogar.getCodigo(), miembroUno.getId(), miembroDos.getId())))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.asignaciones.length()").value(2));
+
+    mockMvc.perform(put("/api/v1/tareas/{id}", tarea.getId())
+        .header("Authorization", "Bearer " + token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {
+            "hogarCodigo":"%s",
+            "titulo":"Comprar pienso actualizado",
+            "esPersonal":false,
+            "miembroIds":["%s"]
+          }
+          """.formatted(hogar.getCodigo(), miembroDos.getId())))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.titulo").value("Comprar pienso actualizado"))
+      .andExpect(jsonPath("$.asignaciones.length()").value(1))
+      .andExpect(jsonPath("$.asignaciones[0].miembroId").value(miembroDos.getId().toString()))
+      .andExpect(jsonPath("$.asignaciones[0].nombreMiembro").value("Luis"));
+  }
+
+  @Test
+  void crear_rejectsMembersFromAnotherHogar() throws Exception {
+    mockMvc.perform(post("/api/v1/tareas")
+        .header("Authorization", "Bearer " + token)
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+          {
+            "hogarCodigo":"%s",
+            "titulo":"Intento invalido",
+            "miembroIds":["%s"]
+          }
+          """.formatted(hogar.getCodigo(), miembroOtroHogar.getId())))
+      .andExpect(status().isConflict())
+      .andExpect(jsonPath("$.type").value("/errors/conflict"))
+      .andExpect(jsonPath("$.detail").value(containsString("no pertenecen al hogar")));
   }
 
   @Test

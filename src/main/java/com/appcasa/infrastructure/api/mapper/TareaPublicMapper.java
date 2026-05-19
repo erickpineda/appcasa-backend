@@ -2,14 +2,22 @@ package com.appcasa.infrastructure.api.mapper;
 
 import com.appcasa.domain.hogar.Hogar;
 import com.appcasa.domain.hogar.HogarRepository;
+import com.appcasa.domain.miembro.MiembroHogar;
+import com.appcasa.domain.miembro.MiembroHogarRepository;
 import com.appcasa.domain.tarea.Tarea;
+import com.appcasa.domain.tarea.TareaAsignacion;
+import com.appcasa.domain.tarea.TareaAsignacionRepository;
 import com.appcasa.infrastructure.api.dto.catalogo.CodigoLabelDto;
+import com.appcasa.infrastructure.api.dto.tarea.TareaAsignacionPublicResponse;
 import com.appcasa.infrastructure.api.dto.tarea.TareaPublicResponse;
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class TareaPublicMapper {
@@ -35,9 +43,17 @@ public class TareaPublicMapper {
   );
 
   private final HogarRepository hogarRepository;
+  private final TareaAsignacionRepository tareaAsignacionRepository;
+  private final MiembroHogarRepository miembroHogarRepository;
 
-  public TareaPublicMapper(HogarRepository hogarRepository) {
+  public TareaPublicMapper(
+    HogarRepository hogarRepository,
+    TareaAsignacionRepository tareaAsignacionRepository,
+    MiembroHogarRepository miembroHogarRepository
+  ) {
     this.hogarRepository = hogarRepository;
+    this.tareaAsignacionRepository = tareaAsignacionRepository;
+    this.miembroHogarRepository = miembroHogarRepository;
   }
 
   public TareaPublicResponse toResponse(Tarea tarea) {
@@ -53,7 +69,7 @@ public class TareaPublicMapper {
       periodicidadDto(tarea.getPeriodicidad()),
       Boolean.TRUE.equals(tarea.getEsPersonal()),
       estadoDto(tarea.getIdEstado()),
-      List.of()
+      asignacionesDto(tarea.getId())
     );
   }
 
@@ -109,5 +125,27 @@ public class TareaPublicMapper {
     }
 
     return PERIODICIDADES.getOrDefault(periodicidad, new CodigoLabelDto(periodicidad, periodicidad));
+  }
+
+  private List<TareaAsignacionPublicResponse> asignacionesDto(UUID idTarea) {
+    List<TareaAsignacion> asignaciones = tareaAsignacionRepository.findByIdTarea(idTarea);
+    if (asignaciones.isEmpty()) {
+      return List.of();
+    }
+
+    Map<UUID, MiembroHogar> miembros = miembroHogarRepository.findAllById(
+        asignaciones.stream().map(TareaAsignacion::getIdMiembro).toList()
+      ).stream()
+      .collect(Collectors.toMap(MiembroHogar::getId, Function.identity()));
+
+    return asignaciones.stream()
+      .map(asignacion -> new TareaAsignacionPublicResponse(
+        asignacion.getIdMiembro(),
+        miembros.containsKey(asignacion.getIdMiembro()) ? miembros.get(asignacion.getIdMiembro()).getNombre() : null
+      ))
+      .sorted(Comparator
+        .comparing((TareaAsignacionPublicResponse item) -> item.nombreMiembro() == null ? "" : item.nombreMiembro())
+        .thenComparing(TareaAsignacionPublicResponse::miembroId))
+      .toList();
   }
 }
