@@ -33,12 +33,12 @@ class InvalidUuidIntegrationTest {
   void invalidUuid_returnsBadRequestProblemDetail() throws Exception {
     String token = registrarYObtenerToken();
 
-    mockMvc.perform(get("/api/v1/tareas/hogar/placeholder-hogar-id/pendientes")
+    mockMvc.perform(get("/api/v1/tareas/placeholder-tarea-id")
         .header("Authorization", "Bearer " + token))
       .andExpect(status().isBadRequest())
       .andExpect(jsonPath("$.type").value("/errors/invalid-parameter"))
       .andExpect(jsonPath("$.status").value(400))
-      .andExpect(jsonPath("$.detail").value("Parametro idHogar invalido"));
+      .andExpect(jsonPath("$.detail").value("Parametro id invalido"));
   }
 
   private String registrarYObtenerToken() throws Exception {
